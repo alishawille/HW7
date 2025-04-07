@@ -1,0 +1,211 @@
+---
+title: "HW7"
+author: "Alisha Wille - afw599"
+date: "2025-04-06"
+output: pdf_document
+---
+
+GitHub Link:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# datasets
+armfold <- read.csv("armfold.csv")
+turnout <- read.csv("turnout.csv")
+
+# libraries
+library(ggplot2)
+library(viridis)
+library(tidyverse)
+library(MatchIt)
+```
+
+## Problem 1
+
+### A.
+
+```{r}
+# number of male/female students in dataset
+table(armfold$Sex)
+
+# prop of males who folded left arm on top
+prop_male <- mean(armfold$LonR_fold[armfold$Sex == "Male"])
+
+prop_male
+
+# prop of females who folded left arm on top
+prop_female <- mean(armfold$LonR_fold[armfold$Sex == "Female"])
+
+prop_female
+
+# observed difference
+obs_diff <- prop_male - prop_female
+
+obs_diff
+```
+
+There are 111 females in the dataset and 106 males. The sample proportion of males who folded their left arm on top is 0.472. The sample proportion of females who folded their left arm on top is 0.423.
+
+### B.
+
+The observed difference in proportions between the two groups is 0.048.
+
+### C.
+
+```{r}
+# 95% Confidence Interval
+prop.test(x = c(sum(armfold$LonR_fold[armfold$Sex == "Male"]),
+                sum(armfold$LonR_fold[armfold$Sex == "Female"])),
+          n = c(sum(armfold$Sex == "Male"), sum(armfold$Sex == "Female")),
+          correct = FALSE)
+
+n1 <- sum(armfold$Sex == "Male")
+n2 <- sum(armfold$Sex == "Female")
+
+SE_armfold <- sqrt((prop_male * (1 - prop_male)) / n1 + (prop_female * (1 - prop_female)) / n2)
+
+SE_armfold
+
+lower_armfold <- obs_diff - 1.96 * SE_armfold
+upper_armfold <- obs_diff + 1.96 * SE_armfold
+c(lower_armfold, upper_armfold)
+
+```
+
+According to R's built-in function, the 95% confidence interval is [-0.08, 0.18]. This means that while there is a possibility that there is no sex difference in arm folding due to 0 being in the interval, there is also up to an 18% higher chance that males will cross their left arm over their right if a difference does exist.
+
+The formula for the standard error of the difference in proportions is sqrt(((p1(1-p1))/n1) + ((p2(1-p2))/n2)). p1 is the sample proportion for males, and p2 is the sample proportion for females. n1 and n2 are the sample sizes. I plugged in 0.472 for p1, 106 for n1, 0.423 for p2, and 111 for n2. I used 1.96 as my z\* value because it is the critical value for a standard normal distribution corresponding to a 95% confidence interval.
+
+My manual calculations resulted in a confidence interval of [-0.08, 0.18], which aligns with R's built-in function up to minor rounding differences.
+
+### D.
+
+If we were to repeat this sampling process over and over again, then we would expect that 95% of the resulting confidence intervals would contain the true difference in proportions between males and females who cross their left arm over their right.
+
+### E.
+
+The standard error that I calculated represents the typical variation amount in the difference in male and female arm folding proportions due to random sampling.
+
+### F.
+
+In this context, sampling distribution refers to the distribution we would observe if the study were repeated many times over, calculating the difference in sample proportions by gender for folding left arm over right each time. The sample proportions for males and females folding their left arm on top and the observed difference in these proportions varies each time, while the true population proportions and differences stay fixed.
+
+### G.
+
+The central limit theorem justifies using a normal distribution to approximate the sampling distribution of the difference in sample proportions. The central limit theorem states that sampling distributions based on averages from a large number of independent samples will basically all look like a normal distribution, which is why we can use that specific distribution to approximate.
+
+### H.
+
+If my 95% confidence interval was [-0.01, 0.30] and somebody claimed that "there's no sex difference in arm folding", I would say that while there is a chance that there is no sex difference in arm folding because my confidence interval includes the value 0, the confidence interval also suggests that there is a possibility that males cross their left arms over their right a considerably higher amount. Based on the confidence interval, there is not enough evidence to confidently say whether there is a sex difference or not.
+
+### I.
+
+If this experiment were repeated many times with different random samples of university students, the confidence interval would be different across the samples due to random variation yielding slightly different sample proportions. 95% of these intervals should contain the true difference in population proportions, however.
+
+## Problem 2
+
+### Part A
+
+```{r}
+# prop who received GOTV call who voted 1998
+mean(turnout$voted1998[turnout$GOTV_call == 1])
+
+# prop who didnt receive GOTV call who voted 1998
+mean(turnout$voted1998[turnout$GOTV_call == 0])
+
+# 95% CI for prop diff
+prop.test(
+  x = c(sum(turnout$voted1998[turnout$GOTV_call == 1]),
+        sum(turnout$voted1998[turnout$GOTV_call == 0])),
+  n = c(sum(turnout$GOTV_call == 1),
+        sum(turnout$GOTV_call == 0)),
+  correct = FALSE
+)
+
+```
+
+The proportion of those who received a GOTV call who voted in 1998 is 0.648. The proportion of those who didn't receive a GOTV call who voted in 1998 is 0.444. The large-sample 95% confidence interval for the difference in the two proportions is [0.143, 0.264], indicating that people who received a GOTV call were between 14.3% and 26.4% more likely to vote in the 1998 election.
+
+### Part B
+
+```{r}
+# voted1996 props
+table(turnout$voted1996, turnout$GOTV_call)
+prop.table(table(turnout$voted1996, turnout$GOTV_call), 2)
+
+# CI
+prop.test(
+  x = c(sum(turnout$voted1996[turnout$GOTV_call == 1]),
+        sum(turnout$voted1996[turnout$GOTV_call == 0])),
+  n = c(sum(turnout$GOTV_call == 1),
+        sum(turnout$GOTV_call == 0)),
+  correct = FALSE
+)
+
+```
+
+71.3% of people who received a GOTV call voted in the 1996 election, while 53.1% of people who did not receive a GOTV call voted in 1996. The observed difference is 18.2%. The 95% confidence interval for the difference in proportions is [0.125, 0.240]. The confidence interval does not include zero, and the p-value is extremely small. This indicates that the people who received a GOTV call in 1998 were much more likely to have voted in 1996 compared to those who did not receive a call, meaning that this is a confounding variable.
+
+```{r}
+# test age confounding variable
+t.test(AGE ~ GOTV_call, data = turnout)
+```
+
+The mean age of someone who did not receive a GOTV call is 49.43, while the mean age of someone who did receive a GOTV call is 58.31.The 95% confidence interval is [-11.40,-6.37] and the p-value is extremely small, indicating significant differences in average age. People who received a GOTV call were about 9 years older on average compared to those who did not receive a call, meaning that this is a confounding variable.
+
+```{r}
+# test MAJORPTY
+prop.test(
+  x = c(sum(turnout$MAJORPTY[turnout$GOTV_call == 1]),
+        sum(turnout$MAJORPTY[turnout$GOTV_call == 0])),
+  n = c(sum(turnout$GOTV_call == 1),
+        sum(turnout$GOTV_call == 0)),
+  correct = FALSE
+)
+```
+
+80.2% of those who received a GOTV call are major party members, while 74.5% of those who did not receive a call are major party members. The difference between the two values os about 5.7%. The 95% confidence interval is [0.006, 0.107], which doesn't include 0, indicating a significant difference. The p-value is 0.042, also indicating statistical significance. People who received a call were more likely to be registered with a major political party, meaning that this is a confounding variable.
+
+### Part C
+
+```{r}
+# match treated and control units
+match_out <- matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY,
+                     data = turnout,
+                     method = "nearest",
+                     ratio = 5)
+# extract matched data
+matched_data <- match.data(match_out)
+
+# check covariate balances
+summary(match_out)
+
+# make sure no more confounders
+t.test(AGE ~ GOTV_call, data = matched_data)
+
+prop.test(table(matched_data$voted1996, matched_data$GOTV_call))
+
+prop.test(table(matched_data$MAJORPTY, matched_data$GOTV_call))
+
+
+# repeat part a with matched data
+mean(matched_data$voted1998[matched_data$GOTV_call == 1])
+mean(matched_data$voted1998[matched_data$GOTV_call == 0])
+
+prop.test(
+  x = c(sum(matched_data$voted1998[matched_data$GOTV_call == 1]),
+        sum(matched_data$voted1998[matched_data$GOTV_call == 0])),
+  n = c(sum(matched_data$GOTV_call == 1),
+        sum(matched_data$GOTV_call == 0)),
+  correct = FALSE
+)
+```
+
+The dataset above is matched using GOTV_call as the treatment variable, and with voted2996, AGE, and MAJORPTY as "matching" variables. According to the matched data, the proportion of people who voted and received a GOTV call is 0.648. The proportion of people who voted and did not receive a GOTV call was 0.569. The observed difference in the proportions is 0.079. The confidence interval is [0.013, 0.144], suggesting statistical significance even after adjusting for confounders. The p-value is 0.022, also indicating statistical significance.
+
+Running a t-test for AGE, the confidence interval is now [-2.76, 2.68] and the p-value is 0.976, meaning this is no longer a confounding variable in the data. Running proportions for voted1996, the confidence interval is [-0.041, 0.042] and the p-value is 1, meaning this is no longer a confounding variable. For MAJORPTY, the confidence interval is [-0.056, 0.045] and the p-value is 0.906, meaning this is no longer a confounding variable.
+
+Before adjusting for confounders, the observed difference was around 20%. After adjusting for confounding variables, the difference was around 8%. This means that we can conclude that the GOTV calls increased the likelihood of people voting, just not as large as believed before adjusting for confounding variables.
